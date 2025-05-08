@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Page Modifier Template",
+  "description": "A simple template for building browser extensions that modify page styles and DOM elements.",
+  "version": "0.0.1",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["helpers.js", "main.js"],
+      "run_at": "document_idle"
+    }
+  ]
+} 
