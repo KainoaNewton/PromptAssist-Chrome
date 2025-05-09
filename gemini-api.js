@@ -32,15 +32,7 @@ Break Down Complexity: Suggest splitting multi-part requests into separate, iter
 Suggest Meta-Prompting: Consider adding phrases like "Ask clarifying questions if needed" or suggesting the user employ Gemini's own prompt editing capabilities.
 Balance Detail: Ensure necessary context and detail (aiming for effectiveness, recalling the ~21-word average for fruitful prompts) without unnecessary complexity.
 Output Format:
-Respond exactly in the following format, using the specified XML-like tags to clearly delineate each section. Do not include any text outside these tags other than whitespace.
-<EnhancedPrompt>
-
-(Present the full, rewritten system prompt here. Ensure it preserves the original intent while incorporating improvements optimized for Gemini.)
-
-</EnhancedPrompt>
-<AnalysisSummary>
-*(Provide a brief, 2-4 sentence summary highlighting the main areas identified for improvement in the original prompt, referencing the P-T-C-F framework where applicable.)*
-</AnalysisSummary>
+The response should simply be the improved prompt. Do not include any text outside of the improved prompt.
 `;
 
 class GeminiAPI {
@@ -76,7 +68,7 @@ class GeminiAPI {
 			const prompt = `${SYSTEM_PROMPT}\n\nUser Prompt: "${userPrompt.trim()}"`;
 
 			const response = await fetch(
-				'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' +
+				'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' +
 					this.apiKey,
 				{
 					method: 'POST',
