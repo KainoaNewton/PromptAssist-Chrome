@@ -70,6 +70,45 @@ function onClick(selector, handler) {
 	});
 }
 
+/**
+ * Loads an SVG file and returns its contents as a string.
+ * @param {string} svgPath - Path to the SVG file
+ * @returns {Promise<string>} - Promise resolving to the SVG content as a string
+ */
+async function loadSvgContents(svgPath) {
+	try {
+		const response = await fetch(chrome.runtime.getURL(svgPath));
+		if (!response.ok) {
+			throw new Error(`Failed to load SVG: ${response.statusText}`);
+		}
+		return await response.text();
+	} catch (error) {
+		console.error('Error loading SVG:', error);
+		return null;
+	}
+}
+
+/**
+ * Loads an SVG file and returns its contents as a string synchronously.
+ * @param {string} svgPath - Path to the SVG file
+ * @returns {string|null} - SVG content as a string or null if loading fails
+ */
+function loadSvgContentsSync(svgPath) {
+	try {
+		const xhr = new XMLHttpRequest();
+		xhr.open('GET', chrome.runtime.getURL(svgPath), false); // false makes it synchronous
+		xhr.send();
+
+		if (xhr.status === 200) {
+			return xhr.responseText;
+		}
+		return null;
+	} catch (error) {
+		console.error('Error loading SVG synchronously:', error);
+		return null;
+	}
+}
+
 // Expose functions globally
 window.PageModifier = {
 	injectCSS,
@@ -77,4 +116,6 @@ window.PageModifier = {
 	removeElement,
 	onElementReady,
 	onClick,
+	loadSvgContents,
+	loadSvgContentsSync,
 };

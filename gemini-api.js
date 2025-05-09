@@ -107,6 +107,9 @@ class GeminiAPI {
 	}
 
 	extractEnhancedPrompt(text) {
+		console.log('Debug - Raw API response text:', text);
+
+		// Try to find content in XML-like tags first (original format)
 		const enhancedPromptMatch = text.match(
 			/<EnhancedPrompt>([\s\S]*?)<\/EnhancedPrompt>/
 		);
@@ -114,9 +117,22 @@ class GeminiAPI {
 			/<AnalysisSummary>([\s\S]*?)<\/AnalysisSummary>/
 		);
 
+		// If the XML tags aren't found, use the entire response as the enhanced prompt
+		let enhancedPrompt = '';
+		if (enhancedPromptMatch) {
+			enhancedPrompt = enhancedPromptMatch[1].trim();
+		} else {
+			// If no EnhancedPrompt tags, use the whole text as the prompt
+			enhancedPrompt = text.trim();
+		}
+
+		const analysis = analysisMatch ? analysisMatch[1].trim() : '';
+
+		console.log('Debug - Extracted enhanced prompt:', enhancedPrompt);
+
 		return {
-			enhancedPrompt: enhancedPromptMatch ? enhancedPromptMatch[1].trim() : '',
-			analysis: analysisMatch ? analysisMatch[1].trim() : '',
+			enhancedPrompt: enhancedPrompt,
+			analysis: analysis,
 		};
 	}
 }

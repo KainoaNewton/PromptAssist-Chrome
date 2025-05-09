@@ -30,12 +30,26 @@ PageModifier.injectCSS(`
     background-color: #4a4a4a !important;
   }
 
+  /* Button image container for SVGs */
+  .button-image-container {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .button-image-container svg {
+    width: 100%;
+    height: 100%;
+  }
+
   /* Loading State */
   .prompt-assist-loader {
     display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     border-top-color: #FFFFFF;
     animation: prompt-assist-spin 1s linear infinite;
@@ -48,15 +62,29 @@ PageModifier.injectCSS(`
 
 // Helper function to create button content
 function getButtonContent(config) {
+	// Default SVG button to use if no image specified or as fallback
+	const defaultSvgButton = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>`;
+
 	if (config.buttonImage) {
-		const imageUrl = chrome.runtime.getURL(config.buttonImage);
-		return `<img src="${imageUrl}" alt="Improve" class="button-image" />`;
+		// Check if the image is an SVG
+		if (config.buttonImage.endsWith('.svg')) {
+			// Try to load SVG content synchronously
+			const svgContent = PageModifier.loadSvgContentsSync(config.buttonImage);
+			if (svgContent) {
+				return svgContent;
+			} else {
+				// Fallback to default SVG if loading fails
+				return defaultSvgButton;
+			}
+		} else {
+			// For non-SVG images, use the image tag
+			const imageUrl = chrome.runtime.getURL(config.buttonImage);
+			return `<img src="${imageUrl}" class="button-image" />`;
+		}
 	}
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 16 16" class="button-image">
-    <path d="M2.5 0.5V0H3.5V0.5C3.5 1.60457 4.39543 2.5 5.5 2.5H6V3V3.5H5.5C4.39543 3.5 3.5 4.39543 3.5 5.5V6H3H2.5V5.5C2.5 4.39543 1.60457 3.5 0.5 3.5H0V3V2.5H0.5C1.60457 2.5 2.5 1.60457 2.5 0.5Z" fill="#ffffff"/>
-    <path d="M14.5 4.5V5H13.5V4.5C13.5 3.94772 13.0523 3.5 12.5 3.5H12V3V2.5H12.5C13.0523 2.5 13.5 2.05228 13.5 1.5V1H14H14.5V1.5C14.5 2.05228 14.9477 2.5 15.5 2.5H16V3V3.5H15.5C14.9477 3.5 14.5 3.94772 14.5 4.5Z" fill="#ffffff"/>
-    <path d="M8.40706 4.92939L8.5 4H9.5L9.59294 4.92939C9.82973 7.29734 11.7027 9.17027 14.0706 9.40706L15 9.5V10.5L14.0706 10.5929C11.7027 10.8297 9.82973 12.7027 9.59294 15.0706L9.5 16H8.5L8.40706 15.0706C8.17027 12.7027 6.29734 10.8297 3.92939 10.5929L3 10.5V9.5L3.92939 9.40706C6.29734 9.17027 8.17027 7.29734 8.40706 4.92939Z" fill="#ffffff"/>
-  </svg>`;
+
+	// Return default SVG if no button image specified
+	return defaultSvgButton;
 }
 
 // Add the improve button to input fields
@@ -228,14 +256,28 @@ async function improvePrompt(inputElement, button) {
 		return; // No need for alert since button will be disabled
 	}
 
-	// Show loading state
-	const originalText = button.textContent;
-	button.innerHTML = '<span class="prompt-assist-loader"></span>Improving...';
+	// Store original button content
+	const originalContent = button.innerHTML;
+
+	// Show loading state with animated circular loader icon
+	button.innerHTML =
+		'<div class="button-image-container"><span class="prompt-assist-loader"></span></div>';
 	button.disabled = true;
 
 	try {
 		// Call Gemini API to improve the prompt
 		const result = await window.GeminiAPI.improvePrompt(promptText);
+
+		// Debug log to see what we got back
+		console.log('Debug - API response:', result);
+		console.log('Debug - Enhanced prompt:', result.enhancedPrompt);
+		console.log('Debug - Analysis:', result.analysis);
+
+		// Check if we got a valid response
+		if (!result.enhancedPrompt) {
+			console.error('Empty enhanced prompt received from API');
+			throw new Error('Received empty response from AI');
+		}
 
 		// Update input with improved prompt
 		if (inputElement.tagName.toLowerCase() === 'textarea') {
@@ -248,21 +290,28 @@ async function improvePrompt(inputElement, button) {
 			inputElement.dispatchEvent(new Event('input', { bubbles: true }));
 		}
 
-		// Reset button
-		button.innerHTML = 'Improved!';
+		// Show success SVG
+		const doneSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+		button.innerHTML = `<div class="button-image-container">${doneSvg}</div>`;
+
+		// Reset button after delay
 		setTimeout(() => {
-			button.textContent = originalText;
+			button.innerHTML = originalContent;
 			button.disabled = false;
 		}, 2000);
 	} catch (error) {
 		console.error('Error improving prompt:', error);
-		button.innerHTML = 'Error';
+
+		// Embed error SVG directly (with red fill)
+		const errorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-octagon-alert-icon lucide-octagon-alert"><path d="M12 16h.01"/><path d="M12 8v4"/><path d="M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"/></svg>`;
+
+		button.innerHTML = `<div class="button-image-container">${errorSvg}</div>`;
 		button.title = error.message;
 
 		setTimeout(() => {
-			button.textContent = originalText;
+			button.innerHTML = originalContent;
 			button.disabled = false;
-		}, 2000);
+		}, 2000); // Changed to 3 seconds
 	}
 }
 
