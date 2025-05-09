@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Prompt Assist</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            width: 300px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        button:hover {
+            background-color: #3367d6;
+        }
+
+        button#edit-button {
+            background-color: #34a853;
+        }
+
+        button#edit-button:hover {
+            background-color: #2d8745;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Prompt Assist Settings</h1>
+
+    <label for="api-key">Gemini API Key:</label>
+    <div class="input-container">
+        <input type="password" id="api-key" placeholder="Enter your Gemini API key">
+    </div>
+
+    <div class="button-container">
+        <button id="save-button">Save</button>
+        <button id="edit-button" style="display: none;">Edit</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

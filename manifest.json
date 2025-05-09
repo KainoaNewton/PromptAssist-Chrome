@@ -1,16 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "Page Modifier Template",
-  "description": "A simple template for building browser extensions that modify page styles and DOM elements.",
+  "name": "Prompt Assist",
+  "description": "Adds a button to improve prompts in AI chat applications using Gemini API",
   "version": "0.0.1",
   "permissions": ["storage"],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
   },
+  "web_accessible_resources": [{
+    "resources": ["button.svg", "icon.png"],
+    "matches": ["<all_urls>"]
+  }],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["helpers.js", "main.js"],
+      "matches": [
+        "*://*.demo.chat-sdk.dev/*",
+        "*://demo.chat-sdk.dev/*",
+        "*://*.openai.com/*",
+        "*://*.anthropic.com/*",
+        "*://*.gemini.google.com/*",
+        "*://*.bard.google.com/*",
+        "*://*.chat.mistral.ai/*",
+        "*://*.chat.claude.ai/*",
+        "*://*.poe.com/*",
+        "*://*.perplexity.ai/*"
+      ],
+      "js": ["helpers.js", "website-configs.js", "gemini-api.js", "main.js"],
       "run_at": "document_idle"
     }
   ]

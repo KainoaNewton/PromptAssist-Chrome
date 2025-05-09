@@ -6,9 +6,9 @@
  * @param {string} css - CSS rules to inject
  */
 function injectCSS(css) {
-  const style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
+	const style = document.createElement('style');
+	style.textContent = css;
+	document.head.appendChild(style);
 }
 
 /**
@@ -17,10 +17,10 @@ function injectCSS(css) {
  * @param {string} html - HTML string to insert
  */
 function addElement(selector, html) {
-  const parent = document.querySelector(selector);
-  if (parent) {
-    parent.insertAdjacentHTML('beforeend', html);
-  }
+	const parent = document.querySelector(selector);
+	if (parent) {
+		parent.insertAdjacentHTML('beforeend', html);
+	}
 }
 
 /**
@@ -28,8 +28,8 @@ function addElement(selector, html) {
  * @param {string} selector - CSS selector for elements to remove
  */
 function removeElement(selector) {
-  const elements = document.querySelectorAll(selector);
-  elements.forEach(el => el.remove());
+	const elements = document.querySelectorAll(selector);
+	elements.forEach((el) => el.remove());
 }
 
 /**
@@ -38,19 +38,22 @@ function removeElement(selector) {
  * @param {function(Element): void} callback - Called with the found element
  */
 function onElementReady(selector, callback) {
-  const existing = document.querySelector(selector);
-  if (existing) {
-    callback(existing);
-    return;
-  }
-  const observer = new MutationObserver((mutations, obs) => {
-    const el = document.querySelector(selector);
-    if (el) {
-      obs.disconnect();
-      callback(el);
-    }
-  });
-  observer.observe(document.documentElement, {childList: true, subtree: true});
+	const existing = document.querySelector(selector);
+	if (existing) {
+		callback(existing);
+		return;
+	}
+	const observer = new MutationObserver((mutations, obs) => {
+		const el = document.querySelector(selector);
+		if (el) {
+			obs.disconnect();
+			callback(el);
+		}
+	});
+	observer.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+	});
 }
 
 /**
@@ -59,19 +62,19 @@ function onElementReady(selector, callback) {
  * @param {function(Event): void} handler - Event handler
  */
 function onClick(selector, handler) {
-  document.addEventListener('click', event => {
-    const target = event.target.closest(selector);
-    if (target) {
-      handler(event);
-    }
-  });
+	document.addEventListener('click', (event) => {
+		const target = event.target.closest(selector);
+		if (target) {
+			handler(event);
+		}
+	});
 }
 
 // Expose functions globally
 window.PageModifier = {
-  injectCSS,
-  addElement,
-  removeElement,
-  onElementReady,
-  onClick
-}; 
+	injectCSS,
+	addElement,
+	removeElement,
+	onElementReady,
+	onClick,
+};
