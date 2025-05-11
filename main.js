@@ -2,38 +2,8 @@
 
 // Base CSS for the improve button
 PageModifier.injectCSS(`
-  .prompt-assist-button {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    z-index: 1000;
-    background: none;
-    border: none;
-    padding: 7px;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .prompt-assist-button:hover {
-    background-color: #18181B !important;
-  }
-
-  .prompt-assist-button.disabled {
-    opacity: 0.5;
-    cursor: not-allowed !important;
-    background-color: #4a4a4a !important;
-  }
-
-  .prompt-assist-button.disabled:hover {
-    background-color: #4a4a4a !important;
-  }
-
-  /* Button image container for SVGs */
+  /* Only keep essential loader and utility styles */
   .button-image-container {
-    width: 24px;
-    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -42,6 +12,12 @@ PageModifier.injectCSS(`
   .button-image-container svg {
     width: 100%;
     height: 100%;
+  }
+
+  /* Ensure images maintain aspect ratio */
+  .button-image {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Loading State */
@@ -62,8 +38,17 @@ PageModifier.injectCSS(`
 
 // Helper function to create button content
 function getButtonContent(config) {
+	// Get SVG color or use default
+	const svgColor = config.buttonSvgColor || '#ffffff';
+
 	// Default SVG button to use if no image specified or as fallback
-	const defaultSvgButton = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>`;
+	const defaultSvgButton = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${svgColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles-icon lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>`;
+
+	// Get custom image dimensions or use defaults
+	const imageSize = config.buttonImageSize || 24;
+	const aspectRatio = config.buttonImageAspectRatio || 1;
+	const imageWidth = imageSize;
+	const imageHeight = Math.round(imageSize * aspectRatio);
 
 	if (config.buttonImage) {
 		// Check if the image is an SVG
@@ -71,20 +56,33 @@ function getButtonContent(config) {
 			// Try to load SVG content synchronously
 			const svgContent = PageModifier.loadSvgContentsSync(config.buttonImage);
 			if (svgContent) {
-				return svgContent;
+				// Update SVG width, height and color if provided
+				return svgContent
+					.replace(
+						/<svg([^>]*)>/,
+						`<svg$1 width="${imageWidth}" height="${imageHeight}">`
+					)
+					.replace(/stroke="[^"]*"/g, `stroke="${svgColor}"`)
+					.replace(/fill="[^"]*"/g, `fill="none"`);
 			} else {
 				// Fallback to default SVG if loading fails
-				return defaultSvgButton;
+				return defaultSvgButton.replace(
+					/width="24" height="24"/,
+					`width="${imageWidth}" height="${imageHeight}"`
+				);
 			}
 		} else {
-			// For non-SVG images, use the image tag
+			// For non-SVG images, use the image tag with custom dimensions
 			const imageUrl = chrome.runtime.getURL(config.buttonImage);
-			return `<img src="${imageUrl}" class="button-image" />`;
+			return `<img src="${imageUrl}" class="button-image" width="${imageWidth}" height="${imageHeight}" />`;
 		}
 	}
 
-	// Return default SVG if no button image specified
-	return defaultSvgButton;
+	// Return default SVG if no button image specified, with custom dimensions
+	return defaultSvgButton.replace(
+		/width="24" height="24"/,
+		`width="${imageWidth}" height="${imageHeight}"`
+	);
 }
 
 // Add the improve button to input fields
@@ -101,14 +99,21 @@ function addImproveButtonToInput(inputElement) {
 
 		// Find the closest button container by walking up the DOM tree
 		const findButtonContainer = () => {
+			console.log(
+				'Debug - Looking for button container with selector:',
+				config.buttonContainer.selector
+			);
+
 			// First try the direct parent elements
 			let container = inputElement.closest(config.buttonContainer.selector);
+			console.log('Debug - Container from closest:', !!container);
 
 			if (!container) {
 				// If not found in parents, try searching in siblings or nearby elements
 				container = inputElement.parentElement?.querySelector(
 					config.buttonContainer.selector
 				);
+				console.log('Debug - Container from parentElement:', !!container);
 			}
 
 			if (!container) {
@@ -117,6 +122,96 @@ function addImproveButtonToInput(inputElement) {
 					'form, [role="form"], [role="textbox"], .chat-area'
 				);
 				container = chatArea?.querySelector(config.buttonContainer.selector);
+				console.log('Debug - Container from chatArea:', !!container);
+
+				// Try a broader search if still not found
+				if (!container) {
+					console.log('Debug - Trying document-wide search for container');
+					const possibleContainers = document.querySelectorAll(
+						config.buttonContainer.selector
+					);
+					console.log(
+						'Debug - Found possible containers:',
+						possibleContainers.length
+					);
+
+					if (possibleContainers.length > 0) {
+						// Find the closest container to our input element
+						let closestContainer = null;
+						let minDistance = Infinity;
+
+						possibleContainers.forEach((possibleContainer) => {
+							const rect1 = inputElement.getBoundingClientRect();
+							const rect2 = possibleContainer.getBoundingClientRect();
+							const distance = Math.sqrt(
+								Math.pow(rect1.x - rect2.x, 2) + Math.pow(rect1.y - rect2.y, 2)
+							);
+
+							if (distance < minDistance) {
+								minDistance = distance;
+								closestContainer = possibleContainer;
+							}
+						});
+
+						if (closestContainer) {
+							console.log(
+								'Debug - Found closest container at distance:',
+								minDistance
+							);
+							container = closestContainer;
+						}
+					}
+				}
+			}
+
+			// NEW FALLBACK: Try to find any container near the input element
+			if (!container) {
+				console.log('Debug - Trying proximity-based container search');
+				try {
+					// Get the input element's position
+					const inputRect = inputElement.getBoundingClientRect();
+
+					// Look for elements around the input (near the bottom-right corner)
+					// This is where send buttons are typically located
+					const rightEdge = inputRect.right - 50; // 50px from right edge
+					const bottomEdge = inputRect.bottom - 10; // 10px from bottom
+
+					// Try to find elements at this position
+					let element = document.elementFromPoint(rightEdge, bottomEdge);
+					console.log('Debug - Element at point:', element);
+
+					if (element) {
+						// Try to find a suitable container by walking up the DOM
+						container = element.closest(
+							'[class*="container"], [class*="wrapper"], [class*="toolbar"], [class*="button"]'
+						);
+						console.log('Debug - Proximity container found:', !!container);
+					}
+				} catch (e) {
+					console.error('Error during proximity search:', e);
+				}
+			}
+
+			// LAST RESORT: Create a container if none found
+			if (!container) {
+				console.log('Debug - Creating a container element');
+				// Find the parent that contains the input
+				const inputParent = inputElement.parentElement;
+
+				// Create a new container
+				container = document.createElement('div');
+				container.className = 'prompt-assist-custom-container';
+				container.style.cssText = `
+					display: inline-flex;
+					align-items: center;
+					margin-right: 10px;
+				`;
+
+				// Insert it after the input element
+				if (inputParent) {
+					inputParent.insertAdjacentElement('beforeend', container);
+					console.log('Debug - Created and inserted custom container');
+				}
 			}
 
 			return container;
@@ -199,6 +294,138 @@ function addImproveButtonToContainer(container, inputElement, config) {
 		Object.assign(button.style, styles);
 	}
 
+	// Apply custom image dimensions to button-image-container if specified
+	const imageSize = config.buttonImageSize || 24;
+	const aspectRatio = config.buttonImageAspectRatio || 1;
+	const imageWidth = imageSize;
+	const imageHeight = Math.round(imageSize * aspectRatio);
+
+	const buttonImageContainer = button.querySelector('.button-image-container');
+	if (buttonImageContainer) {
+		buttonImageContainer.style.width = `${imageWidth}px`;
+		buttonImageContainer.style.height = `${imageHeight}px`;
+	}
+
+	// Apply hover styles if defined in config
+	if (config.buttonHoverStyles || config.buttonHoverSvgColor) {
+		// Create a unique ID for this button
+		const buttonId =
+			button.id ||
+			'prompt-assist-' + Math.random().toString(36).substring(2, 9);
+		if (!button.id) button.id = buttonId;
+
+		// Create a style tag with the hover styles
+		const styleTag = document.createElement('style');
+
+		// Apply all hover styles with !important to override base styles
+		let hoverStyles = '';
+		if (config.buttonHoverStyles) {
+			hoverStyles = config.buttonHoverStyles
+				.split(';')
+				.filter((style) => style.trim())
+				.map((style) => {
+					// Check if the style already has !important
+					if (style.includes('!important')) {
+						return style;
+					}
+					// Add !important to the style if it doesn't have it
+					const [property, value] = style.split(':').map((s) => s.trim());
+					return `${property}: ${value} !important`;
+				})
+				.join('; ');
+		}
+
+		// Add SVG color change on hover if specified
+		let svgHoverStyle = '';
+		if (config.buttonHoverSvgColor) {
+			svgHoverStyle = `
+				#${buttonId}:hover:not(.disabled) svg {
+					stroke: ${config.buttonHoverSvgColor} !important;
+					color: ${config.buttonHoverSvgColor} !important;
+				}
+				#${buttonId}:hover:not(.disabled) svg path {
+					stroke: ${config.buttonHoverSvgColor} !important;
+					color: ${config.buttonHoverSvgColor} !important;
+				}
+			`;
+		}
+
+		// Apply only the styles from the config, no default outline or box-shadow
+		styleTag.textContent = `
+			#${buttonId}:hover:not(.disabled) {
+				${hoverStyles};
+			}
+			${svgHoverStyle}
+		`;
+		document.head.appendChild(styleTag);
+
+		console.log('Debug - Applied hover styles:', hoverStyles);
+	}
+
+	// Apply disabled styles if defined in config
+	if (config.buttonDisabledStyles || config.buttonDisabledSvgColor) {
+		const buttonId =
+			button.id ||
+			'prompt-assist-' + Math.random().toString(36).substring(2, 9);
+		if (!button.id) button.id = buttonId;
+
+		// Create or get the style tag
+		let styleTag = document.getElementById(`${buttonId}-styles`);
+		if (!styleTag) {
+			styleTag = document.createElement('style');
+			styleTag.id = `${buttonId}-styles`;
+			document.head.appendChild(styleTag);
+		}
+
+		// Apply all disabled styles with !important to override base styles
+		let disabledStyles = '';
+		if (config.buttonDisabledStyles) {
+			disabledStyles = config.buttonDisabledStyles
+				.split(';')
+				.filter((style) => style.trim())
+				.map((style) => {
+					// Check if the style already has !important
+					if (style.includes('!important')) {
+						return style;
+					}
+					// Add !important to the style if it doesn't have it
+					const [property, value] = style.split(':').map((s) => s.trim());
+					return `${property}: ${value} !important`;
+				})
+				.join('; ');
+		}
+
+		// Add SVG color change when disabled if specified
+		let svgDisabledStyle = '';
+		if (config.buttonDisabledSvgColor) {
+			svgDisabledStyle = `
+				#${buttonId}.disabled svg {
+					stroke: ${config.buttonDisabledSvgColor} !important;
+					color: ${config.buttonDisabledSvgColor} !important;
+				}
+				#${buttonId}.disabled svg path {
+					stroke: ${config.buttonDisabledSvgColor} !important;
+					color: ${config.buttonDisabledSvgColor} !important;
+				}
+			`;
+		}
+
+		// Add to the style tag
+		styleTag.textContent += `
+			#${buttonId}.disabled {
+				${disabledStyles};
+			}
+			#${buttonId}.disabled:hover {
+				${disabledStyles};
+				outline: none !important;
+				box-shadow: none !important;
+			}
+			${svgDisabledStyle}
+		`;
+
+		console.log('Debug - Applied disabled styles:', disabledStyles);
+	}
+
 	// Insert button in the appropriate position
 	container.insertAdjacentElement(insertPosition, button);
 	console.log('Debug - Button inserted with position:', insertPosition);
@@ -208,9 +435,39 @@ function addImproveButtonToContainer(container, inputElement, config) {
 		let promptText = '';
 		if (inputElement.tagName.toLowerCase() === 'textarea') {
 			promptText = inputElement.value;
+		} else if (inputElement.getAttribute('contenteditable') === 'true') {
+			// Special handling for Gemini's contenteditable
+			if (inputElement.classList.contains('ql-editor')) {
+				// Get text directly from paragraphs
+				promptText = Array.from(inputElement.querySelectorAll('p'))
+					.map((p) => p.textContent || p.innerText)
+					.join('\n')
+					.trim();
+
+				// If no paragraphs or empty, get the inner text directly
+				if (!promptText) {
+					promptText = inputElement.innerText || inputElement.textContent;
+				}
+
+				// Clean up any non-visible characters and check if truly empty
+				promptText = promptText.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+			} else {
+				// For contenteditable divs, get text content from all child paragraphs
+				promptText = Array.from(inputElement.children)
+					.map((child) => child.textContent)
+					.join('\n')
+					.trim();
+			}
 		} else {
 			promptText = inputElement.textContent || inputElement.innerText;
 		}
+
+		console.log(
+			'Debug - Current prompt text length:',
+			promptText.length,
+			'Content:',
+			promptText.substring(0, 20)
+		);
 
 		if (!promptText.trim()) {
 			button.classList.add('disabled');
@@ -228,9 +485,23 @@ function addImproveButtonToContainer(container, inputElement, config) {
 	// Initial state
 	updateButtonState();
 
-	// Listen for input changes
+	// Listen for input changes with more events for better reliability
 	inputElement.addEventListener('input', updateButtonState);
 	inputElement.addEventListener('change', updateButtonState);
+	inputElement.addEventListener('keyup', updateButtonState);
+
+	// For Gemini's special editor, watch for mutations as well
+	if (inputElement.classList.contains('ql-editor')) {
+		const observer = new MutationObserver(() => {
+			setTimeout(updateButtonState, 10); // Small delay to let the DOM update
+		});
+
+		observer.observe(inputElement, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+		});
+	}
 
 	// Add click handler
 	button.addEventListener('click', async (e) => {
@@ -248,6 +519,26 @@ async function improvePrompt(inputElement, button) {
 	let promptText;
 	if (inputElement.tagName.toLowerCase() === 'textarea') {
 		promptText = inputElement.value;
+	} else if (inputElement.getAttribute('contenteditable') === 'true') {
+		// Special handling for Gemini's contenteditable
+		if (inputElement.classList.contains('ql-editor')) {
+			// Get text directly from paragraphs
+			promptText = Array.from(inputElement.querySelectorAll('p'))
+				.map((p) => p.textContent || p.innerText)
+				.join('\n')
+				.trim();
+
+			// If no paragraphs or empty, get the inner text directly
+			if (!promptText) {
+				promptText = inputElement.innerText || inputElement.textContent;
+			}
+		} else {
+			// For contenteditable divs, get text content from all child paragraphs
+			promptText = Array.from(inputElement.children)
+				.map((child) => child.textContent)
+				.join('\n')
+				.trim();
+		}
 	} else {
 		promptText = inputElement.textContent || inputElement.innerText;
 	}
@@ -284,6 +575,36 @@ async function improvePrompt(inputElement, button) {
 			inputElement.value = result.enhancedPrompt;
 			// Trigger input event to update UI
 			inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+		} else if (inputElement.getAttribute('contenteditable') === 'true') {
+			// Special handling for Gemini's input
+			if (inputElement.classList.contains('ql-editor')) {
+				// Clear existing content
+				inputElement.innerHTML = '';
+
+				// Create paragraphs for each line
+				const lines = result.enhancedPrompt.split('\n');
+				lines.forEach((line) => {
+					const p = document.createElement('p');
+					p.textContent = line;
+					inputElement.appendChild(p);
+				});
+			} else {
+				// For contenteditable divs, create a new paragraph for each line
+				const lines = result.enhancedPrompt.split('\n');
+				inputElement.innerHTML = lines.map((line) => `<p>${line}</p>`).join('');
+			}
+
+			// Trigger input event to update UI
+			inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+			inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+
+			// Extra event for Gemini
+			const keyEvent = new KeyboardEvent('keydown', {
+				key: ' ',
+				code: 'Space',
+				bubbles: true,
+			});
+			inputElement.dispatchEvent(keyEvent);
 		} else {
 			inputElement.textContent = result.enhancedPrompt;
 			// Trigger input event to update UI
@@ -324,11 +645,70 @@ function observeForChatInputs() {
 	}
 	console.log('Debug - Using config:', config);
 
+	// Add a function to log all possible text input elements on the page
+	const logAllPossibleInputs = () => {
+		console.log('Debug - Checking for all possible text inputs on the page:');
+
+		// Check for standard textarea and input elements
+		const textareas = document.querySelectorAll('textarea');
+		console.log('Debug - Found textareas:', textareas.length);
+
+		// Check for contenteditable elements
+		const contenteditables = document.querySelectorAll(
+			'[contenteditable="true"]'
+		);
+		console.log(
+			'Debug - Found contenteditable elements:',
+			contenteditables.length
+		);
+
+		// Check for elements with role=textbox
+		const textboxes = document.querySelectorAll('[role="textbox"]');
+		console.log('Debug - Found role=textbox elements:', textboxes.length);
+
+		// List all textbox elements
+		if (textboxes.length > 0) {
+			console.log('Debug - Details of textbox elements:');
+			textboxes.forEach((el, i) => {
+				console.log(`Debug - Textbox ${i}:`, {
+					id: el.id,
+					class: el.className,
+					contentEditable: el.contentEditable,
+					attributes: Array.from(el.attributes)
+						.map((attr) => `${attr.name}="${attr.value}"`)
+						.join(', '),
+				});
+			});
+		}
+
+		// List all contenteditable elements
+		if (contenteditables.length > 0) {
+			console.log('Debug - Details of contenteditable elements:');
+			contenteditables.forEach((el, i) => {
+				console.log(`Debug - Contenteditable ${i}:`, {
+					id: el.id,
+					class: el.className,
+					role: el.getAttribute('role'),
+					attributes: Array.from(el.attributes)
+						.map((attr) => `${attr.name}="${attr.value}"`)
+						.join(', '),
+				});
+			});
+		}
+	};
+
+	// Log all possible input elements initially
+	setTimeout(logAllPossibleInputs, 1000);
+
 	// Check existing elements
+	let foundInputs = false;
 	config.inputSelectors.forEach((selector) => {
 		console.log('Debug - Checking selector:', selector);
 		const elements = document.querySelectorAll(selector);
 		console.log('Debug - Found elements:', elements.length);
+		if (elements.length > 0) {
+			foundInputs = true;
+		}
 		elements.forEach((element) => {
 			addImproveButtonToInput(element);
 		});
@@ -345,14 +725,21 @@ function observeForChatInputs() {
 		});
 
 		if (shouldCheck) {
+			let foundInputsInMutation = false;
 			config.inputSelectors.forEach((selector) => {
 				console.log('Debug - Checking selector (mutation):', selector);
 				const elements = document.querySelectorAll(selector);
 				console.log('Debug - Found elements (mutation):', elements.length);
+				if (elements.length > 0) {
+					foundInputsInMutation = true;
+				}
 				elements.forEach((element) => {
 					addImproveButtonToInput(element);
 				});
 			});
+
+			// Periodically check for all input elements
+			setTimeout(logAllPossibleInputs, 500);
 		}
 	});
 

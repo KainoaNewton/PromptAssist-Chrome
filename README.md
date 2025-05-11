@@ -39,41 +39,47 @@ You can add support for new websites by adding a configuration to `website-confi
 
 ```javascript
 'your-website.com/*': {
-    // Button appearance: 'text', 'custom-icon', or 'logo'
-    buttonVersion: 'custom-icon',
-
-    // Custom button settings
-    buttonImage: 'path/to/icon.png',  // Optional: Custom button image
-    buttonText: 'Improve',            // Button text (not used in 'logo' version)
-    buttonTooltip: 'Custom tooltip',  // Tooltip text on hover
-
-    // Input field selectors (in order of preference)
+    // REQUIRED: Input field selectors - at least one is needed
     inputSelectors: [
         '#main-input',                // Primary selector
         'textarea.chat-input',        // Fallback selector
         'div[contenteditable="true"]' // Another fallback
     ],
 
-    // Button container configuration
+    // REQUIRED: Button container configuration
     buttonContainer: {
-        // Where to find the container for the button
-        selector: '.chat-controls',
-
-        // Where to place the button relative to the container
-        insertPosition: 'inside-start',  // or 'inside-end', 'outside-before', 'outside-after'
-
-        // Button spacing and positioning
-        styles: {
-            marginLeft: '8px',
-            display: 'inline-block',
-            verticalAlign: 'middle'
-        }
+        selector: '.chat-controls',   // Where to find the container for the button
+        insertPosition: 'inside-start', // Position relative to container
     },
 
-    // Optional: Custom CSS for styling
-    customCSS: `
-        /* Your custom styles here */
-    `
+    // OPTIONAL: Button appearance customization
+    buttonImage: 'path/to/icon.png',  // Custom button image (default: sparkle SVG)
+    buttonImageSize: 24,              // Size of button image in pixels (default: 24)
+    buttonImageAspectRatio: 0.75,     // Aspect ratio for height (default: 1)
+
+    // OPTIONAL: SVG color customization
+    buttonSvgColor: '#FFFFFF',        // Normal state SVG color (default: white)
+    buttonHoverSvgColor: '#FFFFFF',   // Hover state SVG color
+    buttonDisabledSvgColor: '#888888', // Disabled state SVG color
+
+    // OPTIONAL: Button style customization
+    buttonStyles: `
+        background: none;
+        border: none;
+        padding: 7px;
+        cursor: pointer;
+        border-radius: 6px;
+    `,
+
+    buttonHoverStyles: `
+        background-color: rgba(0, 0, 0, 0.05);
+    `,
+
+    buttonDisabledStyles: `
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: rgba(74, 74, 74, 0.2);
+    `,
 }
 ```
 
@@ -105,12 +111,41 @@ You can add support for new websites by adding a configuration to `website-confi
 
 3. **Custom Button Settings**
 
+   All of these properties are optional with reasonable defaults:
+
    ```javascript
-   // All optional - will use defaults if not specified
-   buttonImage: 'images/custom-icon.png',  // Custom image file
-   buttonText: 'Enhance',                  // Custom button text
-   buttonTooltip: 'Enhance with AI',       // Custom tooltip
+   // Image customization (all optional)
+   buttonImage: 'images/custom-icon.png',  // Default: built-in sparkle SVG icon
+   buttonImageSize: 24,                    // Default: 24 pixels
+   buttonImageAspectRatio: 0.75,           // Default: 1.0 (square)
+
+   // SVG color customization (all optional)
+   buttonSvgColor: '#FFFFFF',              // Default: white
+   buttonHoverSvgColor: '#F0F0F0',         // Color when hovering
+   buttonDisabledSvgColor: '#888888',      // Color when disabled
+
+   // Style customization (all optional)
+   buttonStyles: `
+       background: none;
+       border: none;
+       padding: 7px;
+       cursor: pointer;
+       border-radius: 6px;
+   `,  // Default: transparent background with standard padding
+
+   buttonHoverStyles: `
+       background-color: rgba(0, 0, 0, 0.05);
+   `,  // Default: slight background darkening on hover
+
+   buttonDisabledStyles: `
+       opacity: 0.5;
+       cursor: not-allowed;
+       background-color: rgba(74, 74, 74, 0.2);
+   `,  // Default: semi-transparent gray when button is disabled
    ```
+
+   You only need to specify properties you want to customize. The default
+   button works well in most cases without any customization.
 
 4. **Input Field Selectors**
 
@@ -189,7 +224,20 @@ You can add support for new websites by adding a configuration to `website-confi
 
 ### Example Configurations
 
-1. **Simple Text Button**
+1. **Minimal Configuration (Only Required Properties)**
+
+```javascript
+'simple-chat.com/*': {
+    // Only specify what's needed - everything else uses defaults
+    inputSelectors: ['#chat-input'],
+    buttonContainer: {
+        selector: '.input-wrapper',
+        insertPosition: 'inside-end'
+    }
+}
+```
+
+2. **Simple Text Button**
 
 ```javascript
 'simple-chat.com/*': {
@@ -206,12 +254,20 @@ You can add support for new websites by adding a configuration to `website-confi
 }
 ```
 
-2. **Custom Styled Custom-Icon Button**
+3. **Custom Styled Custom-Icon Button**
 
 ```javascript
 'fancy-chat.com/*': {
     buttonVersion: 'custom-icon',
     buttonImage: 'magic-wand.svg',
+    buttonImageSize: 24,               // Base size - controls the width
+    buttonImageAspectRatio: 0.75,      // Makes height 18px (24 × 0.75 = 18)
+
+    // Custom SVG colors for different states
+    buttonSvgColor: '#BBBBBB',         // Light gray in normal state
+    buttonHoverSvgColor: '#FFFFFF',    // White when hovering
+    buttonDisabledSvgColor: '#666666', // Dark gray when disabled
+
     buttonText: 'Enhance',
     buttonTooltip: 'Enhance your prompt with AI',
     inputSelectors: [
@@ -225,6 +281,23 @@ You can add support for new websites by adding a configuration to `website-confi
             marginRight: '8px'
         }
     },
+    buttonStyles: `
+        background-color: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+    `,
+    buttonHoverStyles: `
+        background-color: #3a3a3a;
+        border-color: #4a4a4a;
+    `,
+    buttonDisabledStyles: `
+        opacity: 0.4;
+        cursor: not-allowed;
+        background-color: #1a1a1a;
+        border-color: #2a2a2a;
+    `,
     customCSS: `
         .prompt-assist-button.version-shadcn {
             background-color: #2a2a2a;
@@ -234,7 +307,7 @@ You can add support for new websites by adding a configuration to `website-confi
 }
 ```
 
-3. **Minimal Logo Button**
+4. **Minimal Logo Button**
 
 ```javascript
 'minimal-chat.com/*': {

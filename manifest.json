@@ -17,14 +17,10 @@
       "matches": [
         "*://*.demo.chat-sdk.dev/*",
         "*://demo.chat-sdk.dev/*",
-        "*://*.openai.com/*",
-        "*://*.anthropic.com/*",
+        "*://*.chatgpt.com/*",
         "*://*.gemini.google.com/*",
-        "*://*.bard.google.com/*",
-        "*://*.chat.mistral.ai/*",
-        "*://*.chat.claude.ai/*",
-        "*://*.poe.com/*",
-        "*://*.perplexity.ai/*"
+        "*://*.claude.ai/*",
+        "*://*.t3.chat/*"
       ],
       "js": ["helpers.js", "website-configs.js", "gemini-api.js", "main.js"],
       "run_at": "document_idle"
