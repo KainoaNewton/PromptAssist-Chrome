@@ -140,6 +140,7 @@ const WEBSITE_CONFIGS = {
 		// Optional: SVG colors for different states
 		buttonSvgColor: '#9A9B9C', // Normal state SVG color
 		buttonHoverSvgColor: '#FFFFFF', // Hover state SVG color
+		buttonDisabledSvgColor: '#5A5A5A', // Disabled state SVG color
 
 		// Updated input field selectors based on actual console logs
 		inputSelectors: [
@@ -187,7 +188,9 @@ const WEBSITE_CONFIGS = {
 
 		// Button disabled styles in CSS format (applied when button is disabled/inactive)
 		buttonDisabledStyles: `
-			display: none;
+			opacity: 0.5;
+			cursor: not-allowed !important;
+			background-color: transparent !important;
 		`,
 	},
 	'claude.ai/*': {
@@ -196,6 +199,7 @@ const WEBSITE_CONFIGS = {
 
 		// Optional: SVG colors for different states
 		buttonSvgColor: '#C2C0B6', // Normal state SVG color
+		buttonDisabledSvgColor: '#6A6A6A', // Disabled state SVG color
 
 		// Input field selectors (you only need 1 but its good to have backups, top is used first)
 		inputSelectors: [
@@ -238,7 +242,9 @@ const WEBSITE_CONFIGS = {
 
 		// Button disabled styles in CSS format (applied when button is disabled/inactive)
 		buttonDisabledStyles: `
-			display: none !important;
+			opacity: 0.5;
+			cursor: not-allowed !important;
+			background-color: transparent !important;
 			outline: none !important;
 		`,
 	},
@@ -249,6 +255,7 @@ const WEBSITE_CONFIGS = {
 		// Optional: SVG colors for different states
 		buttonSvgColor: '#E7CFDD', // Normal state SVG color
 		buttonHoverSvgColor: '#E7CFDD', // Hover state SVG color
+		buttonDisabledSvgColor: '#68596A', // Disabled state SVG color
 
 		// Input field selectors (you only need 1 but its good to have backups, top is used first)
 		inputSelectors: [
@@ -293,7 +300,9 @@ const WEBSITE_CONFIGS = {
 
 		// Button disabled styles in CSS format (applied when button is disabled/inactive)
 		buttonDisabledStyles: `
-			opacity: 0 !important;
+			opacity: 0.5;
+			cursor: not-allowed !important;
+			background-color: transparent !important;
 			border: none !important;
 			border-color: transparent !important;
 			outline: none !important;

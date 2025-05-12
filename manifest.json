@@ -8,6 +8,9 @@
     "default_popup": "popup.html",
     "default_icon": "icon.png"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "web_accessible_resources": [{
     "resources": ["button.svg", "icon.png"],
     "matches": ["<all_urls>"]

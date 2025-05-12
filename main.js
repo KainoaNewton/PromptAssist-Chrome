@@ -90,172 +90,174 @@ function addImproveButtonToInput(inputElement) {
 	const config = getCurrentWebsiteConfig();
 	if (!config) return;
 
-	// Check if API key exists before proceeding
-	chrome.storage.local.get(['geminiApiKey'], (result) => {
-		if (!result.geminiApiKey) {
-			console.log('Debug - No API key found, not adding improve button');
-			return;
-		}
+	// Find the closest button container by walking up the DOM tree
+	const findButtonContainer = () => {
+		console.log(
+			'Debug - Looking for button container with selector:',
+			config.buttonContainer.selector
+		);
 
-		// Find the closest button container by walking up the DOM tree
-		const findButtonContainer = () => {
-			console.log(
-				'Debug - Looking for button container with selector:',
-				config.buttonContainer.selector
-			);
-
-			// First try the direct parent elements
-			let container = inputElement.closest(config.buttonContainer.selector);
-			console.log('Debug - Container from closest:', !!container);
-
-			if (!container) {
-				// If not found in parents, try searching in siblings or nearby elements
-				container = inputElement.parentElement?.querySelector(
-					config.buttonContainer.selector
-				);
-				console.log('Debug - Container from parentElement:', !!container);
-			}
-
-			if (!container) {
-				// If still not found, search in the entire form/chat area
-				const chatArea = inputElement.closest(
-					'form, [role="form"], [role="textbox"], .chat-area'
-				);
-				container = chatArea?.querySelector(config.buttonContainer.selector);
-				console.log('Debug - Container from chatArea:', !!container);
-
-				// Try a broader search if still not found
-				if (!container) {
-					console.log('Debug - Trying document-wide search for container');
-					const possibleContainers = document.querySelectorAll(
-						config.buttonContainer.selector
-					);
-					console.log(
-						'Debug - Found possible containers:',
-						possibleContainers.length
-					);
-
-					if (possibleContainers.length > 0) {
-						// Find the closest container to our input element
-						let closestContainer = null;
-						let minDistance = Infinity;
-
-						possibleContainers.forEach((possibleContainer) => {
-							const rect1 = inputElement.getBoundingClientRect();
-							const rect2 = possibleContainer.getBoundingClientRect();
-							const distance = Math.sqrt(
-								Math.pow(rect1.x - rect2.x, 2) + Math.pow(rect1.y - rect2.y, 2)
-							);
-
-							if (distance < minDistance) {
-								minDistance = distance;
-								closestContainer = possibleContainer;
-							}
-						});
-
-						if (closestContainer) {
-							console.log(
-								'Debug - Found closest container at distance:',
-								minDistance
-							);
-							container = closestContainer;
-						}
-					}
-				}
-			}
-
-			// NEW FALLBACK: Try to find any container near the input element
-			if (!container) {
-				console.log('Debug - Trying proximity-based container search');
-				try {
-					// Get the input element's position
-					const inputRect = inputElement.getBoundingClientRect();
-
-					// Look for elements around the input (near the bottom-right corner)
-					// This is where send buttons are typically located
-					const rightEdge = inputRect.right - 50; // 50px from right edge
-					const bottomEdge = inputRect.bottom - 10; // 10px from bottom
-
-					// Try to find elements at this position
-					let element = document.elementFromPoint(rightEdge, bottomEdge);
-					console.log('Debug - Element at point:', element);
-
-					if (element) {
-						// Try to find a suitable container by walking up the DOM
-						container = element.closest(
-							'[class*="container"], [class*="wrapper"], [class*="toolbar"], [class*="button"]'
-						);
-						console.log('Debug - Proximity container found:', !!container);
-					}
-				} catch (e) {
-					console.error('Error during proximity search:', e);
-				}
-			}
-
-			// LAST RESORT: Create a container if none found
-			if (!container) {
-				console.log('Debug - Creating a container element');
-				// Find the parent that contains the input
-				const inputParent = inputElement.parentElement;
-
-				// Create a new container
-				container = document.createElement('div');
-				container.className = 'prompt-assist-custom-container';
-				container.style.cssText = `
-					display: inline-flex;
-					align-items: center;
-					margin-right: 10px;
-				`;
-
-				// Insert it after the input element
-				if (inputParent) {
-					inputParent.insertAdjacentElement('beforeend', container);
-					console.log('Debug - Created and inserted custom container');
-				}
-			}
-
-			return container;
-		};
-
-		// Check if button already exists
-		const container = findButtonContainer();
-		console.log('Debug - Found button container:', !!container);
+		// First try the direct parent elements
+		let container = inputElement.closest(config.buttonContainer.selector);
+		console.log('Debug - Container from closest:', !!container);
 
 		if (!container) {
-			console.log(
-				'Debug - Button container not found for selector:',
-				config.buttonContainer.selector,
-				'- Will retry on DOM changes'
+			// If not found in parents, try searching in siblings or nearby elements
+			container = inputElement.parentElement?.querySelector(
+				config.buttonContainer.selector
 			);
-
-			// Set up a mutation observer to watch for the container being added
-			const observer = new MutationObserver((mutations, obs) => {
-				const newContainer = findButtonContainer();
-				if (newContainer) {
-					obs.disconnect();
-					addImproveButtonToContainer(newContainer, inputElement, config);
-				}
-			});
-
-			// Observe the chat area or form for changes
-			const chatArea =
-				inputElement.closest(
-					'form, [role="form"], [role="textbox"], .chat-area'
-				) || document.body;
-			observer.observe(chatArea, {
-				childList: true,
-				subtree: true,
-			});
-
-			return;
+			console.log('Debug - Container from parentElement:', !!container);
 		}
 
-		addImproveButtonToContainer(container, inputElement, config);
+		if (!container) {
+			// If still not found, search in the entire form/chat area
+			const chatArea = inputElement.closest(
+				'form, [role="form"], [role="textbox"], .chat-area'
+			);
+			container = chatArea?.querySelector(config.buttonContainer.selector);
+			console.log('Debug - Container from chatArea:', !!container);
+
+			// Try a broader search if still not found
+			if (!container) {
+				console.log('Debug - Trying document-wide search for container');
+				const possibleContainers = document.querySelectorAll(
+					config.buttonContainer.selector
+				);
+				console.log(
+					'Debug - Found possible containers:',
+					possibleContainers.length
+				);
+
+				if (possibleContainers.length > 0) {
+					// Find the closest container to our input element
+					let closestContainer = null;
+					let minDistance = Infinity;
+
+					possibleContainers.forEach((possibleContainer) => {
+						const rect1 = inputElement.getBoundingClientRect();
+						const rect2 = possibleContainer.getBoundingClientRect();
+						const distance = Math.sqrt(
+							Math.pow(rect1.x - rect2.x, 2) + Math.pow(rect1.y - rect2.y, 2)
+						);
+
+						if (distance < minDistance) {
+							minDistance = distance;
+							closestContainer = possibleContainer;
+						}
+					});
+
+					if (closestContainer) {
+						console.log(
+							'Debug - Found closest container at distance:',
+							minDistance
+						);
+						container = closestContainer;
+					}
+				}
+			}
+		}
+
+		// NEW FALLBACK: Try to find any container near the input element
+		if (!container) {
+			console.log('Debug - Trying proximity-based container search');
+			try {
+				// Get the input element's position
+				const inputRect = inputElement.getBoundingClientRect();
+
+				// Look for elements around the input (near the bottom-right corner)
+				// This is where send buttons are typically located
+				const rightEdge = inputRect.right - 50; // 50px from right edge
+				const bottomEdge = inputRect.bottom - 10; // 10px from bottom
+
+				// Try to find elements at this position
+				let element = document.elementFromPoint(rightEdge, bottomEdge);
+				console.log('Debug - Element at point:', element);
+
+				if (element) {
+					// Try to find a suitable container by walking up the DOM
+					container = element.closest(
+						'[class*="container"], [class*="wrapper"], [class*="toolbar"], [class*="button"]'
+					);
+					console.log('Debug - Proximity container found:', !!container);
+				}
+			} catch (e) {
+				console.error('Error during proximity search:', e);
+			}
+		}
+
+		// LAST RESORT: Create a container if none found
+		if (!container) {
+			console.log('Debug - Creating a container element');
+			// Find the parent that contains the input
+			const inputParent = inputElement.parentElement;
+
+			// Create a new container
+			container = document.createElement('div');
+			container.className = 'prompt-assist-custom-container';
+			container.style.cssText = `
+				display: inline-flex;
+				align-items: center;
+				margin-right: 10px;
+			`;
+
+			// Insert it after the input element
+			if (inputParent) {
+				inputParent.insertAdjacentElement('beforeend', container);
+				console.log('Debug - Created and inserted custom container');
+			}
+		}
+
+		return container;
+	};
+
+	// Check if button already exists
+	const container = findButtonContainer();
+	console.log('Debug - Found button container:', !!container);
+
+	if (!container) {
+		console.log(
+			'Debug - Button container not found for selector:',
+			config.buttonContainer.selector,
+			'- Will retry on DOM changes'
+		);
+
+		// Set up a mutation observer to watch for the container being added
+		const observer = new MutationObserver((mutations, obs) => {
+			const newContainer = findButtonContainer();
+			if (newContainer) {
+				obs.disconnect();
+				addImproveButtonToContainer(newContainer, inputElement, config);
+			}
+		});
+
+		// Observe the chat area or form for changes
+		const chatArea =
+			inputElement.closest(
+				'form, [role="form"], [role="textbox"], .chat-area'
+			) || document.body;
+		observer.observe(chatArea, {
+			childList: true,
+			subtree: true,
+		});
+
+		return;
+	}
+
+	// Check if API key exists and pass its status to the button creation function
+	chrome.storage.local.get(['geminiApiKey'], (result) => {
+		const hasApiKey = !!result.geminiApiKey;
+		console.log('Debug - API key exists:', hasApiKey);
+		addImproveButtonToContainer(container, inputElement, config, hasApiKey);
 	});
 }
 
 // Helper function to add the button to a container
-function addImproveButtonToContainer(container, inputElement, config) {
+function addImproveButtonToContainer(
+	container,
+	inputElement,
+	config,
+	hasApiKey
+) {
 	const existingButton = container.querySelector('.prompt-assist-button');
 	if (existingButton) {
 		console.log('Debug - Button already exists');
@@ -266,7 +268,16 @@ function addImproveButtonToContainer(container, inputElement, config) {
 	const button = document.createElement('button');
 	button.className = 'prompt-assist-button';
 	button.innerHTML = getButtonContent(config);
-	button.title = 'Input a prompt first'; // Default tooltip
+
+	// Set default state based on API key availability
+	if (!hasApiKey) {
+		button.classList.add('disabled');
+		button.title = 'Add API key in extension settings';
+		button.style.cursor = 'not-allowed';
+		button.disabled = true;
+	} else {
+		button.title = 'Input a prompt first'; // Default tooltip for when API key exists
+	}
 
 	// Set position attribute for CSS styling
 	const insertPosition = config.buttonContainer.insertPosition;
@@ -432,6 +443,11 @@ function addImproveButtonToContainer(container, inputElement, config) {
 
 	// Add input event listener to update button state
 	const updateButtonState = () => {
+		// If there's no API key, keep button disabled regardless of input content
+		if (!hasApiKey) {
+			return;
+		}
+
 		let promptText = '';
 		if (inputElement.tagName.toLowerCase() === 'textarea') {
 			promptText = inputElement.value;
@@ -506,6 +522,10 @@ function addImproveButtonToContainer(container, inputElement, config) {
 	// Add click handler
 	button.addEventListener('click', async (e) => {
 		if (button.disabled) {
+			if (!hasApiKey) {
+				// If clicked when disabled due to no API key, show the extension popup
+				chrome.runtime.sendMessage({ action: 'showPopup' });
+			}
 			e.preventDefault();
 			return;
 		}
@@ -700,52 +720,62 @@ function observeForChatInputs() {
 	// Log all possible input elements initially
 	setTimeout(logAllPossibleInputs, 1000);
 
-	// Check existing elements
-	let foundInputs = false;
-	config.inputSelectors.forEach((selector) => {
-		console.log('Debug - Checking selector:', selector);
-		const elements = document.querySelectorAll(selector);
-		console.log('Debug - Found elements:', elements.length);
-		if (elements.length > 0) {
-			foundInputs = true;
-		}
-		elements.forEach((element) => {
-			addImproveButtonToInput(element);
+	// Check for API key
+	chrome.storage.local.get(['geminiApiKey'], (result) => {
+		const hasApiKey = !!result.geminiApiKey;
+
+		// Check existing elements
+		let foundInputs = false;
+		config.inputSelectors.forEach((selector) => {
+			console.log('Debug - Checking selector:', selector);
+			const elements = document.querySelectorAll(selector);
+			console.log('Debug - Found elements:', elements.length);
+			if (elements.length > 0) {
+				foundInputs = true;
+			}
+			elements.forEach((element) => {
+				addImproveButtonToInput(element);
+			});
 		});
-	});
 
-	// Observe for new elements
-	const observer = new MutationObserver((mutations) => {
-		let shouldCheck = false;
+		// Observe for new elements
+		const observer = new MutationObserver((mutations) => {
+			let shouldCheck = false;
 
-		mutations.forEach((mutation) => {
-			if (mutation.addedNodes.length > 0) {
-				shouldCheck = true;
+			mutations.forEach((mutation) => {
+				if (mutation.addedNodes.length > 0) {
+					shouldCheck = true;
+				}
+			});
+
+			if (shouldCheck) {
+				// Check current API key status before adding new buttons
+				chrome.storage.local.get(['geminiApiKey'], (result) => {
+					const hasApiKey = !!result.geminiApiKey;
+
+					let foundInputsInMutation = false;
+					config.inputSelectors.forEach((selector) => {
+						console.log('Debug - Checking selector (mutation):', selector);
+						const elements = document.querySelectorAll(selector);
+						console.log('Debug - Found elements (mutation):', elements.length);
+						if (elements.length > 0) {
+							foundInputsInMutation = true;
+						}
+						elements.forEach((element) => {
+							addImproveButtonToInput(element);
+						});
+					});
+
+					// Periodically check for all input elements
+					setTimeout(logAllPossibleInputs, 500);
+				});
 			}
 		});
 
-		if (shouldCheck) {
-			let foundInputsInMutation = false;
-			config.inputSelectors.forEach((selector) => {
-				console.log('Debug - Checking selector (mutation):', selector);
-				const elements = document.querySelectorAll(selector);
-				console.log('Debug - Found elements (mutation):', elements.length);
-				if (elements.length > 0) {
-					foundInputsInMutation = true;
-				}
-				elements.forEach((element) => {
-					addImproveButtonToInput(element);
-				});
-			});
-
-			// Periodically check for all input elements
-			setTimeout(logAllPossibleInputs, 500);
-		}
-	});
-
-	observer.observe(document.body, {
-		childList: true,
-		subtree: true,
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+		});
 	});
 }
 
@@ -755,13 +785,54 @@ function handleApiKeyChange(changes) {
 		const config = getCurrentWebsiteConfig();
 		if (!config) return;
 
-		if (!changes.geminiApiKey.newValue) {
-			// API key was removed, remove all improve buttons
-			document.querySelectorAll('.prompt-assist-button').forEach((button) => {
-				button.remove();
-			});
-		} else {
-			// API key was added, check for inputs and add buttons
+		const hasApiKey = !!changes.geminiApiKey.newValue;
+		console.log('Debug - API key ' + (hasApiKey ? 'added' : 'removed'));
+
+		// Find all existing prompt-assist buttons and update their state
+		document.querySelectorAll('.prompt-assist-button').forEach((button) => {
+			if (!hasApiKey) {
+				// No API key, disable and gray out all buttons
+				button.classList.add('disabled');
+				button.title = 'Add API key in extension settings';
+				button.style.cursor = 'not-allowed';
+				button.disabled = true;
+			} else {
+				// API key added, buttons should be enabled based on input content
+				const inputElement = findAssociatedInput(button, config);
+				if (inputElement) {
+					// Check if there's text in the input
+					let hasText = false;
+					if (inputElement.tagName.toLowerCase() === 'textarea') {
+						hasText = !!inputElement.value.trim();
+					} else if (inputElement.getAttribute('contenteditable') === 'true') {
+						hasText = !!(
+							inputElement.textContent || inputElement.innerText
+						).trim();
+					} else {
+						hasText = !!(
+							inputElement.textContent || inputElement.innerText
+						).trim();
+					}
+
+					if (hasText) {
+						// Enable button if input has text
+						button.classList.remove('disabled');
+						button.title = 'Improve your prompt with AI';
+						button.style.cursor = 'pointer';
+						button.disabled = false;
+					} else {
+						// Disable button if input is empty
+						button.classList.add('disabled');
+						button.title = 'Input a prompt first';
+						button.style.cursor = 'not-allowed';
+						button.disabled = true;
+					}
+				}
+			}
+		});
+
+		// If API key was added or already exists, check for inputs that don't have buttons yet
+		if (hasApiKey) {
 			config.inputSelectors.forEach((selector) => {
 				const elements = document.querySelectorAll(selector);
 				elements.forEach((element) => {
@@ -772,10 +843,93 @@ function handleApiKeyChange(changes) {
 	}
 }
 
+// Helper function to find the input element associated with a button
+function findAssociatedInput(button, config) {
+	// First try to find the closest container that might contain the input
+	let container =
+		button.closest('.prompt-assist-custom-container') || button.parentElement;
+
+	if (!container) return null;
+
+	// Check all possible input selectors
+	for (const selector of config.inputSelectors) {
+		// Try to find the input in nearby elements
+		let input = container.querySelector(selector);
+
+		// If not found, try looking in parent containers
+		if (!input) {
+			const parentForm = container.closest('form');
+			if (parentForm) {
+				input = parentForm.querySelector(selector);
+			}
+		}
+
+		// If not found, try looking in the broader context
+		if (!input) {
+			// Find all inputs matching the selector
+			const allInputs = document.querySelectorAll(selector);
+
+			// If only one found, that's probably it
+			if (allInputs.length === 1) {
+				input = allInputs[0];
+			} else if (allInputs.length > 1) {
+				// If multiple, find the closest one by DOM proximity
+				let closestInput = null;
+				let closestDistance = Infinity;
+
+				allInputs.forEach((possibleInput) => {
+					// Calculate DOM "distance" (number of steps between elements)
+					let distance = 0;
+					let current = button;
+					let common = null;
+
+					// Find common ancestor
+					while (current && !common) {
+						let ancestor = possibleInput;
+						let depth = 0;
+
+						while (ancestor && ancestor !== current) {
+							ancestor = ancestor.parentElement;
+							depth++;
+						}
+
+						if (ancestor === current) {
+							common = ancestor;
+							distance = depth;
+							break;
+						}
+
+						current = current.parentElement;
+						distance++;
+					}
+
+					if (common && distance < closestDistance) {
+						closestDistance = distance;
+						closestInput = possibleInput;
+					}
+				});
+
+				input = closestInput;
+			}
+		}
+
+		if (input) return input;
+	}
+
+	return null;
+}
+
 // Listen for API key changes
 chrome.storage.onChanged.addListener((changes, namespace) => {
 	if (namespace === 'local') {
 		handleApiKeyChange(changes);
+	}
+});
+
+// Handle opening the popup UI when clicked on disabled button
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (request.action === 'openOptionsPage') {
+		chrome.runtime.openOptionsPage();
 	}
 });
 
